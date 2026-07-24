@@ -1,0 +1,26 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.cache
+
+# Backend
+backend/target/
+backend/.mvn/
+backend/*.log
+
+# Java
+*.class
+
+# Env files
+.env
+*.env
