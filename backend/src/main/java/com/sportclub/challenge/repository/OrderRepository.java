@@ -1,19 +1,38 @@
 package com.sportclub.challenge.repository;
 
-import com.sportclub.challenge.entity.Order;
-
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.sportclub.challenge.entity.Order;
+import com.sportclub.challenge.enums.OrderStatus;
+
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
     @Override
     @EntityGraph(attributePaths = "customer")
     List<Order> findAll();
 
     @Override
-    @EntityGraph(attributePaths = { "customer", "orderItems" })
+    @EntityGraph(attributePaths = {"customer", "orderItems"})
     Optional<Order> findById(Long id);
+
+    @EntityGraph(attributePaths = "customer")
+    @Query("""
+    SELECT o
+    FROM Order o
+    WHERE (:status IS NULL OR o.status = :status)
+      AND (:dateFrom IS NULL OR o.date >= :dateFrom)
+      AND (:dateTo IS NULL OR o.date <= :dateTo)
+    ORDER BY o.date DESC, o.id DESC
+        """)
+    List<Order> findByFilters(
+            @Param("status") OrderStatus status,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo);
 }

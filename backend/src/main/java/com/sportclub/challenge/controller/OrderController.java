@@ -1,22 +1,26 @@
 package com.sportclub.challenge.controller;
 
-import com.sportclub.challenge.dto.OrderResponseDto;
-import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
-import com.sportclub.challenge.dto.OrderDetailResponseDto;
-import com.sportclub.challenge.dto.CreateOrderRequestDto;
-import com.sportclub.challenge.service.OrderService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 import java.util.List;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.sportclub.challenge.dto.CreateOrderRequestDto;
+import com.sportclub.challenge.dto.OrderDetailResponseDto;
+import com.sportclub.challenge.dto.OrderResponseDto;
+import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
+import com.sportclub.challenge.enums.OrderStatus;
+import com.sportclub.challenge.service.OrderService;
+
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/orders")
 public class OrderController {
 
@@ -27,8 +31,11 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<OrderResponseDto> getAllOrders() {
-        return orderService.getAllOrders();
+    public List<OrderResponseDto> getAllOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo) {
+        return orderService.getAllOrders(status, dateFrom, dateTo);
     }
 
     @PostMapping

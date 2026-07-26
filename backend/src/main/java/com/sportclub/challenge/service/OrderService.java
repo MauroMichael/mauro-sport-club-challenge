@@ -1,24 +1,26 @@
 package com.sportclub.challenge.service;
 
-import com.sportclub.challenge.dto.OrderResponseDto;
-import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
-import com.sportclub.challenge.dto.OrderDetailResponseDto;
-import com.sportclub.challenge.dto.OrderItemResponseDto;
-import com.sportclub.challenge.dto.CreateOrderItemRequestDto;
-import com.sportclub.challenge.dto.CreateOrderRequestDto;
-import com.sportclub.challenge.entity.Order;
-import com.sportclub.challenge.entity.Customer;
-import com.sportclub.challenge.entity.OrderItem;
-import com.sportclub.challenge.enums.OrderStatus;
-import com.sportclub.challenge.repository.OrderRepository;
-import com.sportclub.challenge.repository.CustomerRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.sportclub.challenge.dto.CreateOrderItemRequestDto;
+import com.sportclub.challenge.dto.CreateOrderRequestDto;
+import com.sportclub.challenge.dto.OrderDetailResponseDto;
+import com.sportclub.challenge.dto.OrderItemResponseDto;
+import com.sportclub.challenge.dto.OrderResponseDto;
+import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
+import com.sportclub.challenge.entity.Customer;
+import com.sportclub.challenge.entity.Order;
+import com.sportclub.challenge.entity.OrderItem;
+import com.sportclub.challenge.enums.OrderStatus;
+import com.sportclub.challenge.repository.CustomerRepository;
+import com.sportclub.challenge.repository.OrderRepository;
 
 @Service
 public class OrderService {
@@ -31,8 +33,16 @@ public class OrderService {
         this.customerRepository = customerRepository;
     }
 
-    public List<OrderResponseDto> getAllOrders() {
-        return orderRepository.findAll()
+    public List<OrderResponseDto> getAllOrders(OrderStatus status, String dateFrom, String dateTo) {
+        LocalDate parsedDateFrom = dateFrom != null && !dateFrom.isBlank() ? LocalDate.parse(dateFrom) : null;
+        LocalDate parsedDateTo = dateTo != null && !dateTo.isBlank() ? LocalDate.parse(dateTo) : null;
+
+        if(parsedDateFrom != null && parsedDateTo != null && parsedDateFrom.isAfter(parsedDateTo)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "dateFrom cannot be after dateTo");
+        }
+
+
+        return orderRepository.findByFilters(status, parsedDateFrom, parsedDateTo)
                 .stream()
                 .map(this::mapToDto)
                 .toList();
