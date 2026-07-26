@@ -15,6 +15,14 @@ export async function getOrders(filters = {}) {
         params.append("dateTo", filters.dateTo);
     }
 
+    if (filters.page !== undefined) {
+        params.append("page", filters.page);
+    }
+
+    if (filters.size !== undefined) {
+        params.append("size", filters.size);
+    }
+
     const queryString = params.toString();
     const url = queryString ? `${API_BASE_URL}/orders?${queryString}` : `${API_BASE_URL}/orders`;
 
@@ -22,7 +30,7 @@ export async function getOrders(filters = {}) {
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.message || "Failed to fetch orders");
+        throw new Error(errorData.detail || errorData.message || "Failed to fetch orders");
     }
 
     return response.json();
@@ -33,7 +41,7 @@ export async function getOrderById(id) {
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.message || "Failed to fetch order detail");
+        throw new Error(errorData.detail || errorData.message || "Failed to fetch order detail");
     }
 
     return response.json();
@@ -50,7 +58,7 @@ export async function updateOrderStatus(id, status) {
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.message || "Failed to update order status");
+        throw new Error(errorData.detail || errorData.message || "Failed to update order status");
     }
 
     return response.json();

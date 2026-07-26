@@ -5,6 +5,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,6 +18,7 @@ import com.sportclub.challenge.dto.CreateOrderRequestDto;
 import com.sportclub.challenge.dto.OrderDetailResponseDto;
 import com.sportclub.challenge.dto.OrderItemResponseDto;
 import com.sportclub.challenge.dto.OrderResponseDto;
+import com.sportclub.challenge.dto.PageResponseDto;
 import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
 import com.sportclub.challenge.entity.Customer;
 import com.sportclub.challenge.entity.Order;
@@ -33,19 +38,43 @@ public class OrderService {
         this.customerRepository = customerRepository;
     }
 
-    public List<OrderResponseDto> getAllOrders(OrderStatus status, String dateFrom, String dateTo) {
+    public PageResponseDto<OrderResponseDto> getAllOrders(OrderStatus status, String dateFrom, String dateTo, int page, int size) {
         LocalDate parsedDateFrom = dateFrom != null && !dateFrom.isBlank() ? LocalDate.parse(dateFrom) : null;
         LocalDate parsedDateTo = dateTo != null && !dateTo.isBlank() ? LocalDate.parse(dateTo) : null;
 
-        if(parsedDateFrom != null && parsedDateTo != null && parsedDateFrom.isAfter(parsedDateTo)) {
+        if (parsedDateFrom != null && parsedDateTo != null && parsedDateFrom.isAfter(parsedDateTo)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "dateFrom cannot be after dateTo");
         }
 
+        if (page < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page must be greater than or equal to 0");
+        }
 
-        return orderRepository.findByFilters(status, parsedDateFrom, parsedDateTo)
+        if (size <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "size must be greater than 0");
+        }
+
+        if (size > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "size must be less than or equal to 50");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("date"), Sort.Order.desc("id")));
+
+        Page<Order> ordersPage = orderRepository.findByFilters(status, parsedDateFrom, parsedDateTo, pageable);
+
+        List<OrderResponseDto> content = ordersPage.getContent()
                 .stream()
                 .map(this::mapToDto)
                 .toList();
+
+        return new PageResponseDto<>(
+                content,
+                ordersPage.getNumber(),
+                ordersPage.getSize(),
+                ordersPage.getTotalElements(),
+                ordersPage.getTotalPages(),
+                ordersPage.isLast()
+        );
     }
 
     private OrderResponseDto mapToDto(Order order) {
@@ -70,9 +99,9 @@ public class OrderService {
                 order.getCustomer().getEmail(),
                 order.getOrderItems().stream()
                         .map(item -> new OrderItemResponseDto(
-                                item.getProductName(),
-                                item.getQuantity(),
-                                item.getPrice()))
+                        item.getProductName(),
+                        item.getQuantity(),
+                        item.getPrice()))
                         .toList());
     }
 

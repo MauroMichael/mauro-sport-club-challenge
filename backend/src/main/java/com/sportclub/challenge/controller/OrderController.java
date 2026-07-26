@@ -1,7 +1,5 @@
 package com.sportclub.challenge.controller;
 
-import java.util.List;
-
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sportclub.challenge.dto.CreateOrderRequestDto;
 import com.sportclub.challenge.dto.OrderDetailResponseDto;
 import com.sportclub.challenge.dto.OrderResponseDto;
+import com.sportclub.challenge.dto.PageResponseDto;
 import com.sportclub.challenge.dto.UpdateOrderStatusRequestDto;
 import com.sportclub.challenge.enums.OrderStatus;
 import com.sportclub.challenge.service.OrderService;
@@ -31,11 +30,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<OrderResponseDto> getAllOrders(
+    public PageResponseDto<OrderResponseDto> getAllOrders(
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) String dateFrom,
-            @RequestParam(required = false) String dateTo) {
-        return orderService.getAllOrders(status, dateFrom, dateTo);
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return orderService.getAllOrders(status, dateFrom, dateTo, page, size);
     }
 
     @PostMapping

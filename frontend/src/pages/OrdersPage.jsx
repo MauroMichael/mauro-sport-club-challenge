@@ -3,6 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { getOrders } from "../services/OrdersApi";
 
 export default function OrdersPage() {
+  const DEFAULT_PAGE_SIZE = 10;
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,12 +16,20 @@ export default function OrdersPage() {
   const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") || "");
   const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
 
+  const [currentPage, setCurrentPage] = useState(
+    Number(searchParams.get("page") || 0),
+  );
+  const [totalPages, setTotalPages] = useState(0);
+  const [last, setLast] = useState(false);
+
   const dateRangeInvalid = dateFrom && dateTo && dateFrom > dateTo;
 
   useEffect(() => {
     async function loadOrders() {
       if (dateRangeInvalid) {
         setOrders([]);
+        setTotalPages(0);
+        setLast(false);
         setError("Invalid date range: 'From' date cannot be after 'To' date.");
         setLoading(false);
         return;
@@ -32,28 +42,46 @@ export default function OrdersPage() {
           status: statusFilter || undefined,
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
+          page: currentPage,
+          size: DEFAULT_PAGE_SIZE,
         });
 
-        setOrders(data);
-      } catch {
-        setError("Could not load orders.");
+        setOrders(data.content);
+        setCurrentPage(data.page);
+        setTotalPages(data.totalPages);
+        setLast(data.last);
+      } catch (err) {
+        setError(err.message || "Could not load orders.");
       } finally {
         setLoading(false);
       }
     }
 
     loadOrders();
-  }, [statusFilter, dateFrom, dateTo, dateRangeInvalid]);
+  }, [statusFilter, dateFrom, dateTo, dateRangeInvalid, currentPage]);
 
   useEffect(() => {
-  const params = {};
+    const params = {};
 
-  if (statusFilter) params.status = statusFilter;
-  if (dateFrom) params.dateFrom = dateFrom;
-  if (dateTo) params.dateTo = dateTo;
+    if (statusFilter) params.status = statusFilter;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    if (currentPage > 0) params.page = String(currentPage);
 
-  setSearchParams(params);
-}, [statusFilter, dateFrom, dateTo, setSearchParams]);
+    setSearchParams(params);
+  }, [statusFilter, dateFrom, dateTo, currentPage, setSearchParams]);
+
+  function goToPreviousPage() {
+    if (currentPage > 0) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  }
+
+  function goToNextPage() {
+    if (!last) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  }
 
   if (loading) {
     return (
@@ -81,7 +109,10 @@ export default function OrdersPage() {
             Status
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(0);
+              }}
             >
               <option value="">All</option>
               <option value="PENDING">Pending</option>
@@ -95,7 +126,10 @@ export default function OrdersPage() {
             <input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setCurrentPage(0);
+              }}
             />
           </label>
 
@@ -104,7 +138,10 @@ export default function OrdersPage() {
             <input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(0);
+              }}
             />
           </label>
         </div>
@@ -146,6 +183,27 @@ export default function OrdersPage() {
             </tbody>
           </table>
         )}
+        <div className="pagination">
+          <button
+            className="button"
+            onClick={goToPreviousPage}
+            disabled={currentPage === 0}
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {currentPage + 1} of {totalPages || 1}
+          </span>
+
+          <button
+            className="button"
+            onClick={goToNextPage}
+            disabled={last || totalPages === 0}
+          >
+            Next
+          </button>
+        </div>
       </section>
     </main>
   );
