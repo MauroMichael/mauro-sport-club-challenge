@@ -15,7 +15,6 @@ frontend/.cache
 
 # Backend
 backend/target/
-backend/.mvn/
 backend/*.log
 
 # Java
